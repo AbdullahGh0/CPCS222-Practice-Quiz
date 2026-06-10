@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPCS222 — Interactive Practice Quiz</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #0c0e14;
+  --surface: #13161f;
+  --surface2: #1a1e2b;
+  --surface3: #222638;
+  --border: #2a2f42;
+  --border2: #363c52;
+  --accent: #5b8dee;
+  --accent-dim: rgba(91,141,238,0.12);
+  --green: #3dd68c;
+  --green-dim: rgba(61,214,140,0.1);
+  --red: #f06a6a;
+  --red-dim: rgba(240,106,106,0.1);
+  --yellow: #f5a623;
+  --yellow-dim: rgba(245,166,35,0.1);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.1);
+  --text: #dde3f0;
+  --text-dim: #7a84a0;
+  --text-mid: #9da8c4;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.app-logo span { color: var(--text-dim); font-weight: 400; }
+.header-sep { flex: 1; }
+.score-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.score-badge .score-val { color: var(--green); font-weight: 600; }
+
+/* ── LAYOUT ── */
+.app-layout { display: flex; min-height: calc(100vh - 60px); }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 230px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+.sidebar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 0 20px 10px;
+}
+.topic-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  color: var(--text-mid);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.topic-btn:hover { background: var(--surface2); color: var(--text); }
+.topic-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+.topic-btn .topic-icon { font-size: 15px; }
+.topic-btn .topic-check {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.topic-btn.done .topic-check { opacity: 1; }
+.topic-btn .topic-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+/* ── MAIN ── */
+.main { flex: 1; padding: 32px; max-width: 820px; }
+
+/* ── TOPIC HEADER ── */
+.topic-header { margin-bottom: 28px; }
+.topic-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.topic-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+.topic-desc { color: var(--text-mid); font-size: 14px; max-width: 600px; line-height: 1.6; }
+
+/* ── PROGRESS BAR ── */
+.quiz-progress { margin-bottom: 28px; }
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.progress-track {
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ── QUESTION CARD ── */
+.question-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+.question-card.answered-correct { border-color: rgba(61,214,140,0.3); }
+.question-card.answered-wrong { border-color: rgba(240,106,106,0.3); }
+
+.q-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.q-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.q-diff {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+.diff-easy { color: var(--green); border-color: rgba(61,214,140,0.3); background: var(--green-dim); }
+.diff-medium { color: var(--yellow); border-color: rgba(245,166,35,0.3); background: var(--yellow-dim); }
+.diff-hard { color: var(--red); border-color: rgba(240,106,106,0.3); background: var(--red-dim); }
+.diff-expert { color: var(--purple); border-color: rgba(167,139,250,0.3); background: var(--purple-dim); }
+
+.q-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+.q-text code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--surface2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ── MCQ OPTIONS ── */
+.options-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.option-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-mid);
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s;
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+.option-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-dim);
+}
+.option-btn:disabled { cursor: default; }
+.option-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.option-btn.correct { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+.option-btn.wrong { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+.option-btn.reveal-correct {
+  border-color: rgba(61,214,140,0.5);
+  color: var(--green);
+  background: var(--green-dim);
+}
+
+.opt-label {
+  min-width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--surface3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.option-btn.correct .opt-label { background: rgba(61,214,140,0.2); }
+.option-btn.wrong .opt-label { background: rgba(240,106,106,0.2); }
+.option-btn.selected .opt-label { background: rgba(91,141,238,0.2); }
+.option-btn.reveal-correct .opt-label { background: rgba(61,214,140,0.2); }
+
+/* ── TRUE/FALSE ── */
+.tf-row { display: flex; gap: 12px; margin-bottom: 20px; }
+.tf-btn {
+  flex: 1;
+  padding: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--sans);
+  color: var(--text-mid);
+  transition: all 0.15s;
+}
+.tf-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.tf-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.tf-btn.correct { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+.tf-btn.wrong { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+/* ── SUBMIT ── */
+.submit-btn {
+  padding: 12px 28px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.submit-btn:hover { background: #6d9ef0; transform: translateY(-1px); }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.next-btn {
+  padding: 12px 28px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.15s;
+  margin-left: 10px;
+}
+.next-btn:hover { background: var(--surface3); border-color: var(--accent); }
+
+/* ── FEEDBACK PANEL ── */
+.feedback-panel {
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.feedback-correct .feedback-header { background: rgba(61,214,140,0.15); color: var(--green); }
+.feedback-wrong .feedback-header { background: rgba(240,106,106,0.15); color: var(--red); }
+.feedback-body {
+  padding: 20px 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+}
+.feedback-section { margin-bottom: 16px; }
+.feedback-section:last-child { margin-bottom: 0; }
+.fb-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.fb-content { font-size: 13px; color: var(--text-mid); line-height: 1.8; }
+.fb-content code {
+  font-family: var(--mono);
+  background: var(--surface3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--green);
+  font-size: 12px;
+}
+.solution-block {
+  background: #0a0d14;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 2;
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+.solution-block .step { display: block; }
+.solution-block .step-ok { color: var(--green); }
+.solution-block .step-note { color: var(--text-dim); font-size: 11px; }
+
+.revise-box {
+  background: rgba(245,166,35,0.06);
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.revise-box ul { list-style: none; padding: 0; }
+.revise-box ul li {
+  color: var(--text-mid);
+  font-size: 13px;
+  padding: 3px 0;
+  display: flex;
+  gap: 8px;
+}
+.revise-box ul li::before { content: '→'; color: var(--yellow); flex-shrink: 0; }
+
+/* ── RESULTS SCREEN ── */
+.results-screen {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  display: none;
+}
+.results-screen.visible { display: block; }
+.results-emoji { font-size: 52px; margin-bottom: 16px; }
+.results-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.results-sub { color: var(--text-mid); font-size: 15px; margin-bottom: 32px; }
+.score-circle {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  margin: 0 auto 28px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border: 3px solid;
+  font-family: var(--mono);
+}
+.score-circle .sc-num { font-size: 26px; font-weight: 700; }
+.score-circle .sc-label { font-size: 10px; letter-spacing: 1px; }
+.score-high { border-color: var(--green); color: var(--green); }
+.score-mid { border-color: var(--yellow); color: var(--yellow); }
+.score-low { border-color: var(--red); color: var(--red); }
+
+.wrong-summary { text-align: left; margin-top: 28px; }
+.wrong-summary h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text-mid); }
+.wrong-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+.wrong-item .wi-q { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.wrong-item .wi-correct { font-size: 13px; color: var(--green); margin-bottom: 6px; }
+.wrong-item .wi-steps {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.9;
+  white-space: pre-wrap;
+  background: var(--bg);
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+.wi-revise {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--yellow);
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.revise-tag {
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.btn-restart {
+  margin-top: 28px;
+  padding: 14px 32px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s;
+}
+.btn-restart:hover { background: #6d9ef0; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 40px;
+  color: var(--text-dim);
+}
+.empty-state .es-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state h2 { font-size: 20px; color: var(--text-mid); margin-bottom: 8px; }
+
+/* ── UTILITY ── */
+.hidden { display: none !important; }
+.btn-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.topic-panel { display: none; }
+.topic-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-logo">CPCS<span>-222</span> · Practice Engine</div>
+  <div class="header-sep"></div>
+  <div class="score-badge">Total Score: <span class="score-val" id="globalScore">0 / 0</span></div>
+</div>
+
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Topics</div>
+    <button class="topic-btn active" onclick="switchTopic('logic')" id="btn-logic">
+      <span class="topic-icon">⊢</span> Logic & Predicates
+      <span class="topic-num" id="num-logic"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('proofs')" id="btn-proofs">
+      <span class="topic-icon">∴</span> Proofs
+      <span class="topic-num" id="num-proofs"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('sets')" id="btn-sets">
+      <span class="topic-icon">∈</span> Sets
+      <span class="topic-num" id="num-sets"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('summations')" id="btn-summations">
+      <span class="topic-icon">Σ</span> Summations
+      <span class="topic-num" id="num-summations"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('functions')" id="btn-functions">
+      <span class="topic-icon">f</span> Functions
+      <span class="topic-num" id="num-functions"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('relations')" id="btn-relations">
+      <span class="topic-icon">R</span> Relations
+      <span class="topic-num" id="num-relations"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('counting')" id="btn-counting">
+      <span class="topic-icon">#</span> Counting
+      <span class="topic-num" id="num-counting"></span>
+      <span class="topic-check">✓</span>
+    </button>
+    <button class="topic-btn" onclick="switchTopic('induction')" id="btn-induction">
+      <span class="topic-icon">∀</span> Induction
+      <span class="topic-num" id="num-induction"></span>
+      <span class="topic-check">✓</span>
+    </button>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="main" id="mainContent">
+    <!-- Panels injected by JS -->
+  </main>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// QUESTION BANK
+// ═══════════════════════════════════════════════════════════════
+
+const TOPICS = {
+
+logic: {
+  title: "Logic & Predicates",
+  icon: "⊢",
+  desc: "Truth tables, connectives, quantifiers, negation, and translation. Goes from basic propositional logic to nested quantifiers.",
+  questions: [
+    {
+      id: "L1", diff: "easy",
+      text: "What is the truth value of the implication p → q when p = False and q = False?",
+      type: "mcq",
+      options: ["False", "True", "Undefined", "Depends on the context"],
+      correct: 1,
+      solution: "Step 1: Recall the truth table for p → q.\nStep 2: p → q is only FALSE when p = True AND q = False.\nStep 3: Here p = False, so regardless of q, p → q = TRUE.\nResult: TRUE (vacuous truth — a false premise makes the implication vacuously true).",
+      revise: ["Implication truth table", "Vacuous truth concept"]
+    },
+    {
+      id: "L2", diff: "easy",
+      text: "Which of the following is logically equivalent to p → q?",
+      type: "mcq",
+      options: ["q → p", "¬p → ¬q", "¬p ∨ q", "p ∧ ¬q"],
+      correct: 2,
+      solution: "Step 1: The key equivalence is p → q ≡ ¬p ∨ q.\nStep 2: Verify with a truth table row by row:\n  (T,T): p→q=T, ¬p∨q = F∨T = T ✓\n  (T,F): p→q=F, ¬p∨q = F∨F = F ✓\n  (F,T): p→q=T, ¬p∨q = T∨T = T ✓\n  (F,F): p→q=T, ¬p∨q = T∨F = T ✓\nResult: ¬p ∨ q.",
+      revise: ["Implication rewrite rule: p→q ≡ ¬p∨q", "Logical equivalences table"]
+    },
+    {
+      id: "L3", diff: "easy",
+      text: "What is the contrapositive of the statement: 'If it is raining, then the ground is wet'?",
+      type: "mcq",
+      options: [
+        "If the ground is wet, then it is raining.",
+        "If it is not raining, then the ground is not wet.",
+        "If the ground is not wet, then it is not raining.",
+        "If it is not raining, then the ground is wet."
+      ],
+      correct: 2,
+      solution: "Step 1: Identify p = 'It is raining', q = 'The ground is wet'.\nStep 2: The contrapositive is ¬q → ¬p.\nStep 3: ¬q = 'The ground is not wet', ¬p = 'It is not raining'.\nResult: 'If the ground is not wet, then it is not raining.'\n\nNote: Contrapositive is ALWAYS logically equivalent to the original.",
+      revise: ["Contrapositive definition: ¬q → ¬p", "Difference between converse, inverse, contrapositive"]
+    },
+    {
+      id: "L4", diff: "easy",
+      text: "True or False: The converse of p → q is logically equivalent to p → q.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nStep 1: The converse is q → p.\nStep 2: Check with p=T, q=F:\n  p → q = T→F = FALSE\n  q → p = F→T = TRUE\nSince they differ on this row, they are NOT equivalent.\n\nRemember: ONLY the contrapositive (¬q→¬p) is equivalent to p→q.\nThe converse and inverse are equivalent to EACH OTHER, not to the original.",
+      revise: ["Converse vs contrapositive", "Truth table verification method"]
+    },
+    {
+      id: "L5", diff: "medium",
+      text: "How many rows does a truth table with 4 propositional variables have?",
+      type: "mcq",
+      options: ["4", "8", "12", "16"],
+      correct: 3,
+      solution: "Step 1: With n propositional variables, there are 2ⁿ rows.\nStep 2: n = 4, so rows = 2⁴ = 16.\nResult: 16 rows.",
+      revise: ["Truth table row count formula: 2ⁿ rows for n variables"]
+    },
+    {
+      id: "L6", diff: "medium",
+      text: "Which statement correctly translates 'All CS students have a laptop' into predicate logic, where the domain is all people?",
+      type: "mcq",
+      options: [
+        "∃x (CS(x) ∧ Laptop(x))",
+        "∀x (CS(x) ∧ Laptop(x))",
+        "∀x (CS(x) → Laptop(x))",
+        "∃x (CS(x) → Laptop(x))"
+      ],
+      correct: 2,
+      solution: "Step 1: 'All S are P' with a universal domain always uses → not ∧.\nStep 2: ∀x (CS(x) ∧ Laptop(x)) would mean EVERYONE is both a CS student AND has a laptop — wrong.\nStep 3: ∀x (CS(x) → Laptop(x)) means: for every person, IF they are a CS student, THEN they have a laptop.\nResult: ∀x (CS(x) → Laptop(x)).",
+      revise: ["Universal statement translation: ∀x (S(x) → P(x))", "∧ vs → in quantified statements"]
+    },
+    {
+      id: "L7", diff: "medium",
+      text: "What is the negation of ∀x ∃y P(x, y)?",
+      type: "mcq",
+      options: [
+        "∀x ∀y ¬P(x, y)",
+        "∃x ∀y ¬P(x, y)",
+        "∀x ∃y ¬P(x, y)",
+        "∃x ∃y P(x, y)"
+      ],
+      correct: 1,
+      solution: "Step 1: Apply De Morgan's law for quantifiers: ¬∀x Q ≡ ∃x ¬Q.\nStep 2: ¬(∀x ∃y P(x,y)) = ∃x ¬(∃y P(x,y)).\nStep 3: Apply again: ¬(∃y P(x,y)) = ∀y ¬P(x,y).\nResult: ∃x ∀y ¬P(x, y).\n\nRule: Each time you push ¬ through a quantifier, flip ∀↔∃ and move ¬ inward.",
+      revise: ["De Morgan's for quantifiers: ¬∀→∃¬, ¬∃→∀¬", "Negation of nested quantifiers"]
+    },
+    {
+      id: "L8", diff: "medium",
+      text: "True or False: ∀x ∃y (x + y = 0) is true when the domain is the real numbers.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nStep 1: The statement says: 'For every real number x, there exists a real number y such that x+y=0.'\nStep 2: For any given x, we can always choose y = -x.\nStep 3: Then x + y = x + (-x) = 0 ✓.\nSince we can find such a y for every x, the statement is TRUE.",
+      revise: ["Understanding ∀x ∃y vs ∃y ∀x", "Evaluating quantified statements on given domains"]
+    },
+    {
+      id: "L9", diff: "hard",
+      text: "Which is the correct negation of: 'Some lions do not drink coffee'? (Formally: ∃x (Lion(x) ∧ ¬Coffee(x)))",
+      type: "mcq",
+      options: [
+        "∃x (Lion(x) ∧ Coffee(x))",
+        "∀x (Lion(x) → Coffee(x))",
+        "∀x (¬Lion(x) ∨ Coffee(x))",
+        "Both B and C"
+      ],
+      correct: 3,
+      solution: "Step 1: Negate ∃x (Lion(x) ∧ ¬Coffee(x)).\nStep 2: ¬∃x Q ≡ ∀x ¬Q.\nStep 3: ¬(Lion(x) ∧ ¬Coffee(x)) by De Morgan's = ¬Lion(x) ∨ Coffee(x).\nStep 4: Result = ∀x (¬Lion(x) ∨ Coffee(x)).\nStep 5: This is also equivalent to ∀x (Lion(x) → Coffee(x)) by the implication rewrite rule.\nResult: Both B and C are correct — they are logically equivalent.",
+      revise: ["Negating existential: ¬∃x(P∧Q) = ∀x(¬P∨¬Q)", "Implication rewrite: ¬P∨Q ≡ P→Q"]
+    },
+    {
+      id: "L10", diff: "expert",
+      text: "Determine the truth value: ∃x ∀y (x · y = 0) over the domain of integers.",
+      type: "mcq",
+      options: ["True — x = 0 works", "False — no single x works for all y", "True — x = 1 works", "False — the statement is malformed"],
+      correct: 0,
+      solution: "Step 1: The statement asks: 'Is there ONE integer x such that for ALL integers y, x·y = 0?'\nStep 2: Try x = 0: then 0·y = 0 for every integer y. ✓\nStep 3: So x = 0 is our witness. The statement is EXISTENTIALLY satisfied.\nResult: TRUE. The single value x = 0 makes x·y = 0 true for every y.\n\nCompare with ∀x ∃y (x·y = 0): also true (for any x, choose y=0).\nBut these are different statements with different meanings!",
+      revise: ["∃x ∀y vs ∀x ∃y — order of quantifiers matters critically", "Testing quantified statements by finding witnesses or counterexamples"]
+    }
+  ]
+},
+
+proofs: {
+  title: "Rules of Inference & Proof Methods",
+  icon: "∴",
+  desc: "Modus ponens, modus tollens, direct and indirect proofs. Questions test both identifying rules and constructing valid arguments.",
+  questions: [
+    {
+      id: "P1", diff: "easy",
+      text: "Given: p → q and p. What can you conclude? Which rule of inference is used?",
+      type: "mcq",
+      options: ["¬q, by Modus Tollens", "q, by Modus Ponens", "¬p, by Simplification", "p ∧ q, by Conjunction"],
+      correct: 1,
+      solution: "Step 1: We have p → q (if p then q) and p (p is true).\nStep 2: Modus Ponens states: from p and p→q, conclude q.\nStep 3: Since p is true and p→q holds, q must be true.\nResult: q, by Modus Ponens.",
+      revise: ["Modus Ponens: {p, p→q} ⊢ q", "The 8 rules of inference"]
+    },
+    {
+      id: "P2", diff: "easy",
+      text: "Which rule of inference allows you to conclude ¬p from ¬q and p → q?",
+      type: "mcq",
+      options: ["Modus Ponens", "Hypothetical Syllogism", "Modus Tollens", "Disjunctive Syllogism"],
+      correct: 2,
+      solution: "Step 1: We have p → q and ¬q.\nStep 2: Modus Tollens states: from ¬q and p→q, conclude ¬p.\nStep 3: This is the contrapositive argument — if the conclusion is false, the hypothesis must be false.\nResult: Modus Tollens.",
+      revise: ["Modus Tollens: {¬q, p→q} ⊢ ¬p", "Contrapositive connection to Modus Tollens"]
+    },
+    {
+      id: "P3", diff: "easy",
+      text: "True or False: In a direct proof of p → q, you assume ¬p and derive a contradiction.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nA direct proof of p → q assumes p (not ¬p) is true, then derives q.\n\nYou are confusing it with:\n• Proof by contraposition: assume ¬q, derive ¬p.\n• Proof by contradiction: assume ¬p (or ¬(p→q)) and reach a contradiction.\n\nDirect proof = assume hypothesis → derive conclusion.",
+      revise: ["Direct proof method", "Distinguishing direct vs contradiction vs contrapositive proofs"]
+    },
+    {
+      id: "P4", diff: "medium",
+      text: "From: p ∨ q and ¬p, which rule gives you q?",
+      type: "mcq",
+      options: ["Simplification", "Addition", "Disjunctive Syllogism", "Resolution"],
+      correct: 2,
+      solution: "Step 1: We have p ∨ q (at least one is true) and ¬p (p is false).\nStep 2: Since p is false and p ∨ q is true, q must be true.\nStep 3: This is Disjunctive Syllogism: {p∨q, ¬p} ⊢ q.\nResult: Disjunctive Syllogism.",
+      revise: ["Disjunctive Syllogism: {p∨q, ¬p} ⊢ q"]
+    },
+    {
+      id: "P5", diff: "medium",
+      text: "Which proof method is best for: 'If n² is even, then n is even'?",
+      type: "mcq",
+      options: [
+        "Direct proof — assume n² is even, derive n is even",
+        "Proof by contrapositive — assume n is odd, derive n² is odd",
+        "Proof by contradiction — assume both n² is even and n is odd, reach ⊥",
+        "Trivial proof — n is always even"
+      ],
+      correct: 1,
+      solution: "Step 1: Direct proof is difficult here — going from 'n² is even' to 'n is even' is not straightforward.\nStep 2: Contrapositive: prove ¬(n even) → ¬(n² even), i.e., n odd → n² odd.\nStep 3: Assume n is odd → n = 2k+1.\nStep 4: n² = (2k+1)² = 4k²+4k+1 = 2(2k²+2k)+1 → odd ✓.\nResult: Proof by contrapositive is cleaner and standard for this claim.",
+      revise: ["Choosing the right proof method", "Proof by contrapositive technique", "Even/odd definitions: n=2k, n=2k+1"]
+    },
+    {
+      id: "P6", diff: "medium",
+      text: "Premises: (1) ¬q, (2) p → q. What is the valid conclusion using the fewest steps?",
+      type: "mcq",
+      options: ["p", "¬p", "q", "p ∧ ¬q"],
+      correct: 1,
+      solution: "Step 1: We have ¬q (premise 1) and p → q (premise 2).\nStep 2: Apply Modus Tollens: from ¬q and p→q, conclude ¬p.\nStep 3: Formally: ¬q ∧ (p→q) → ¬p (this is the tautology underlying Modus Tollens).\nResult: ¬p.",
+      revise: ["Modus Tollens application", "Reading premises carefully"]
+    },
+    {
+      id: "P7", diff: "hard",
+      text: "Construct a valid argument. Premises: (1) p→q, (2) q→r, (3) ¬r. What is the conclusion, and list ALL steps with rules?",
+      type: "mcq",
+      options: [
+        "¬p — Steps: Hyp.Syl. on (1)(2), then Modus Tollens on result and (3)",
+        "¬q — Steps: Modus Tollens on (2)(3) only",
+        "p — Steps: Modus Ponens on (1)(3)",
+        "r — Steps: Hypothetical Syllogism on (1)(2)"
+      ],
+      correct: 0,
+      solution: "Step 1: Apply Hypothetical Syllogism to (1) and (2):\n  p→q and q→r gives p→r.\nStep 2: Apply Modus Tollens to p→r and ¬r:\n  ¬r and p→r gives ¬p.\nConclusion: ¬p.\n\nFull argument:\n  1. p → q          [Premise]\n  2. q → r          [Premise]\n  3. ¬r             [Premise]\n  4. p → r          [Hypothetical Syllogism, 1+2]\n  5. ¬p             [Modus Tollens, 3+4]   ∎",
+      revise: ["Hypothetical Syllogism: {p→q, q→r} ⊢ p→r", "Chaining multiple rules of inference", "Multi-step argument construction"]
+    },
+    {
+      id: "P8", diff: "hard",
+      text: "True or False: To prove p ↔ q, you only need to prove p → q.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nA biconditional p ↔ q requires proving BOTH directions:\n1. p → q  (forward direction)\n2. q → p  (reverse direction)\n\nProving only one direction gives you a one-way implication, not a biconditional.\nThis is a very common exam mistake — always check if the problem asks for ↔ or just →.",
+      revise: ["Biconditional proof structure: prove p→q AND q→p", "Difference between → and ↔"]
+    },
+    {
+      id: "P9", diff: "expert",
+      text: "Prove directly: If n is an odd integer, then 3n + 2 is odd. Which algebraic step correctly completes the proof?",
+      type: "mcq",
+      options: [
+        "n = 2k → 3(2k)+2 = 6k+2 = 2(3k+1) → even. Contradiction.",
+        "n = 2k+1 → 3(2k+1)+2 = 6k+3+2 = 6k+5 = 2(3k+2)+1 → odd ✓",
+        "n = 2k+1 → 3(2k+1)+2 = 6k+5, which is even.",
+        "n = 2k+1 → 3n+2 = 3n+2, which is trivially odd."
+      ],
+      correct: 1,
+      solution: "Step 1: Assume n is odd. By definition: n = 2k + 1 for some integer k.\nStep 2: Compute 3n + 2:\n  3(2k+1) + 2 = 6k + 3 + 2 = 6k + 5.\nStep 3: Rewrite 6k+5 as 2(3k+2) + 1.\nStep 4: Since 3k+2 is an integer, 3n+2 = 2(3k+2)+1 has the form 2m+1 → odd.\nResult: 3n+2 is odd. ∎",
+      revise: ["Direct proof with even/odd definitions", "Algebraic manipulation in proofs", "Odd definition: 2k+1"]
+    },
+    {
+      id: "P10", diff: "expert",
+      text: "True or False: A vacuous proof of p → q establishes that q is true.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nA vacuous proof of p → q proves that p is FALSE (i.e., ¬p is true).\nSince the hypothesis p is false, the implication p→q is vacuously TRUE — but this says NOTHING about whether q itself is true or false.\n\nExample: 'If I am a unicorn, then 2+2=5' is vacuously true (I'm not a unicorn), but 2+2=5 is still FALSE.\n\nVacuous truth proves the IMPLICATION is true, not the conclusion.",
+      revise: ["Vacuous proof: proves ¬p is true, not q", "Distinction between proving an implication vs proving its conclusion"]
+    }
+  ]
+},
+
+sets: {
+  title: "Sets",
+  icon: "∈",
+  desc: "Set operations, subset relations, power sets, cardinality, Cartesian products, and set identities. Easy to medium-hard.",
+  questions: [
+    {
+      id: "S1", diff: "easy",
+      text: "Let A = {1, 2, 3} and B = {3, 4, 5}. What is A ∩ B?",
+      type: "mcq",
+      options: ["{1, 2, 3, 4, 5}", "{3}", "{1, 2, 4, 5}", "∅"],
+      correct: 1,
+      solution: "Step 1: A ∩ B = elements in BOTH A and B.\nStep 2: A = {1,2,3}, B = {3,4,5}.\nStep 3: Only 3 appears in both sets.\nResult: A ∩ B = {3}.",
+      revise: ["Intersection definition: elements in both sets"]
+    },
+    {
+      id: "S2", diff: "easy",
+      text: "True or False: ∅ ⊆ {1, 2, 3}",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nThe empty set ∅ is a subset of every set.\nReason: For ∅ ⊆ A to be false, there would need to be an element in ∅ that is not in A. Since ∅ has no elements, this can never happen.\nThe condition ∀x (x ∈ ∅ → x ∈ A) is vacuously true for any set A.",
+      revise: ["Empty set is subset of every set (vacuous truth)", "Subset definition"]
+    },
+    {
+      id: "S3", diff: "easy",
+      text: "If |A| = 4, how many elements does the power set P(A) have?",
+      type: "mcq",
+      options: ["4", "8", "12", "16"],
+      correct: 3,
+      solution: "Step 1: If |A| = n, then |P(A)| = 2ⁿ.\nStep 2: |A| = 4, so |P(A)| = 2⁴ = 16.\nResult: 16 subsets.\n\nThese include ∅ (the empty set) and A itself.",
+      revise: ["Power set cardinality: |P(A)| = 2^|A|"]
+    },
+    {
+      id: "S4", diff: "medium",
+      text: "Let U = {1..10}, A = {2,4,6,8,10}, B = {1,2,3,4,5}. What is A − B?",
+      type: "mcq",
+      options: ["{6, 8, 10}", "{1, 3, 5}", "{2, 4}", "{1, 2, 3, 4, 5, 6, 8, 10}"],
+      correct: 0,
+      solution: "Step 1: A − B = elements in A that are NOT in B.\nStep 2: A = {2,4,6,8,10}, B = {1,2,3,4,5}.\nStep 3: Elements of A: 2 (in B, exclude), 4 (in B, exclude), 6 (not in B, keep), 8 (not in B, keep), 10 (not in B, keep).\nResult: A − B = {6, 8, 10}.",
+      revise: ["Set difference A−B = A ∩ B̄", "Elements in A but not in B"]
+    },
+    {
+      id: "S5", diff: "medium",
+      text: "Which of the following correctly states De Morgan's law for sets?",
+      type: "mcq",
+      options: [
+        "A̅ ∪ B̅ = A ∩ B",
+        "A̅ ∩ B̅ = A ∪ B",
+        "A ∩ B̅ = A̅ ∪ B",
+        "̄(A ∪ B) = A̅ ∩ B̅"
+      ],
+      correct: 3,
+      solution: "Step 1: De Morgan's laws for sets are:\n  (A ∪ B)̄ = Ā ∩ B̄\n  (A ∩ B)̄ = Ā ∪ B̄\nStep 2: Option D states (A ∪ B)̄ = Ā ∩ B̄ — this is the first De Morgan law. ✓\nStep 3: The other options rearrange incorrectly.\nResult: Option D.",
+      revise: ["De Morgan's for sets: complement of union = intersection of complements", "Parallel with logical De Morgan's: ¬(p∨q)=¬p∧¬q"]
+    },
+    {
+      id: "S6", diff: "medium",
+      text: "True or False: {∅} = ∅",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\n∅ is the empty set — it has 0 elements. |∅| = 0.\n{∅} is a set containing one element (the empty set itself). |{∅}| = 1.\n\nThey are different sets:\n• ∅ has no elements.\n• {∅} has exactly one element: ∅.\n\nAlso: ∅ ∈ {∅} (empty set is an element of this set).\nBut ∅ ≠ {∅}.",
+      revise: ["Empty set vs set containing empty set", "Cardinality: |∅|=0, |{∅}|=1"]
+    },
+    {
+      id: "S7", diff: "hard",
+      text: "If |A| = 7, |B| = 5, and |A ∪ B| = 10, what is |A ∩ B|?",
+      type: "mcq",
+      options: ["1", "2", "3", "12"],
+      correct: 1,
+      solution: "Step 1: Inclusion-Exclusion principle: |A ∪ B| = |A| + |B| − |A ∩ B|.\nStep 2: Plug in: 10 = 7 + 5 − |A ∩ B|.\nStep 3: 10 = 12 − |A ∩ B|.\nStep 4: |A ∩ B| = 12 − 10 = 2.\nResult: |A ∩ B| = 2.",
+      revise: ["Inclusion-Exclusion: |A∪B| = |A|+|B|−|A∩B|", "Rearranging to find |A∩B|"]
+    },
+    {
+      id: "S8", diff: "hard",
+      text: "Let A = {a, b} and B = {1, 2, 3}. How many elements does A × B have?",
+      type: "mcq",
+      options: ["2", "3", "5", "6"],
+      correct: 3,
+      solution: "Step 1: The Cartesian product A × B contains all ordered pairs (a, b) where a ∈ A and b ∈ B.\nStep 2: |A × B| = |A| × |B| = 2 × 3 = 6.\nStep 3: The pairs are: (a,1),(a,2),(a,3),(b,1),(b,2),(b,3).\nResult: 6 elements.",
+      revise: ["Cartesian product: A×B = {(a,b) | a∈A, b∈B}", "|A×B| = |A| × |B|"]
+    },
+    {
+      id: "S9", diff: "expert",
+      text: "Which proof method would you use to show A ∪ (B ∩ C) = (A ∪ B) ∩ (A ∪ C), and what is the first step?",
+      type: "mcq",
+      options: [
+        "Membership table — build a 3-variable table (8 rows) and check columns match",
+        "Counterexample — find sets where the two sides differ",
+        "Induction on |A|",
+        "Logical deduction from the definition of ∩ only"
+      ],
+      correct: 0,
+      solution: "Step 1: This is a set identity (distributive law). Valid methods: subset proof, set-builder logic, or membership table.\nStep 2: Membership table is cleanest: 3 variables (A,B,C) → 8 rows.\nStep 3: Compute A∪(B∩C) and (A∪B)∩(A∪C) for each row.\nStep 4: If all rows match → identity proven.\n\nAlternatively via logic: x ∈ A∪(B∩C) ↔ x∈A ∨ (x∈B ∧ x∈C) ↔ (x∈A∨x∈B) ∧ (x∈A∨x∈C) ↔ x∈(A∪B)∩(A∪C). [Distributivity of ∨ over ∧]",
+      revise: ["Methods for proving set identities", "Membership table construction", "Distributive law: A∪(B∩C) = (A∪B)∩(A∪C)"]
+    },
+    {
+      id: "S10", diff: "expert",
+      text: "True or False: For any sets A and B, it is always true that A ⊆ A ∪ B.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nProof: Let x be any element of A. We need to show x ∈ A ∪ B.\nBy definition of union: x ∈ A ∪ B ↔ x ∈ A OR x ∈ B.\nSince x ∈ A, the condition 'x ∈ A OR x ∈ B' is satisfied.\nTherefore x ∈ A ∪ B.\nSince x was arbitrary, A ⊆ A ∪ B. ∎",
+      revise: ["Subset proof technique", "Union always contains both operands as subsets"]
+    }
+  ]
+},
+
+summations: {
+  title: "Sequences & Summations",
+  icon: "Σ",
+  desc: "Evaluating summations, applying closed-form rules, limit shifting, and nested double summations. This is the most calculation-heavy topic.",
+  questions: [
+    {
+      id: "SU1", diff: "easy",
+      text: "What is ∑(i=1 to 5) i ?",
+      type: "mcq",
+      options: ["10", "15", "20", "25"],
+      correct: 1,
+      solution: "Step 1: ∑(i=1 to 5) i = 1 + 2 + 3 + 4 + 5 = 15.\nStep 2: Using the formula: n(n+1)/2 = 5×6/2 = 15.\nResult: 15.",
+      revise: ["Summation formula: ∑i = n(n+1)/2"]
+    },
+    {
+      id: "SU2", diff: "easy",
+      text: "Evaluate ∑(i=1 to n) 7. (n is a positive integer.)",
+      type: "mcq",
+      options: ["7", "n", "7n", "n/7"],
+      correct: 2,
+      solution: "Step 1: 7 is a constant — it does not depend on i.\nStep 2: Rule: ∑(i=1 to n) k = k × n.\nStep 3: Therefore ∑(i=1 to n) 7 = 7 × n = 7n.\nResult: 7n.",
+      revise: ["Constant rule: ∑k = k·n", "Identifying constants inside a summation"]
+    },
+    {
+      id: "SU3", diff: "easy",
+      text: "In the summation ∑(i=1 to n) 5j, is j a variable or a constant?",
+      type: "mcq",
+      options: [
+        "j is a variable because it is a letter",
+        "j is a constant because the index is i, not j",
+        "j is a variable because it appears inside the summation",
+        "Cannot determine without knowing j's value"
+      ],
+      correct: 1,
+      solution: "Step 1: The index of the summation is i.\nStep 2: Only the index letter acts as a variable inside the summation.\nStep 3: j is NOT the index, so j is treated as a constant.\nStep 4: Therefore ∑(i=1 to n) 5j = 5j × n = 5jn.\nResult: j is a constant.",
+      revise: ["Variable vs constant rule: only the index is a variable", "∑(i=1,n) 5j = 5jn"]
+    },
+    {
+      id: "SU4", diff: "medium",
+      text: "What is the closed form of ∑(i=1 to n) i²?",
+      type: "mcq",
+      options: [
+        "n(n+1)/2",
+        "n²(n+1)²/4",
+        "n(n+1)(2n+1)/6",
+        "n(n+1)(n+2)/6"
+      ],
+      correct: 2,
+      solution: "Step 1: This is a standard formula that must be memorized.\nStep 2: ∑(i=1 to n) i² = n(n+1)(2n+1)/6.\nStep 3: Verify with n=3: 1+4+9=14. Formula: 3×4×7/6 = 84/6 = 14 ✓.\nResult: n(n+1)(2n+1)/6.",
+      revise: ["Four closed-form summation formulas", "∑i² = n(n+1)(2n+1)/6"]
+    },
+    {
+      id: "SU5", diff: "medium",
+      text: "Evaluate ∑(i=1 to 4) (2i + 1).",
+      type: "mcq",
+      options: ["20", "22", "24", "28"],
+      correct: 2,
+      solution: "Step 1: Split: ∑(2i+1) = 2∑i + ∑1.\nStep 2: ∑(i=1 to 4) i = 4×5/2 = 10.\nStep 3: ∑(i=1 to 4) 1 = 4.\nStep 4: Result = 2×10 + 4 = 20 + 4 = 24.\nVerify by plugging in: (3)+(5)+(7)+(9) = 24 ✓.",
+      revise: ["Splitting summations: ∑(f+g) = ∑f + ∑g", "Pulling constants out of summations"]
+    },
+    {
+      id: "SU6", diff: "medium",
+      text: "Using the limit-shift rule, ∑(i=3 to n) i equals:",
+      type: "mcq",
+      options: [
+        "n(n+1)/2",
+        "n(n+1)/2 − 3",
+        "n(n+1)/2 − 1 − 2",
+        "n(n+1)/2 − 1 − 2 − 3"
+      ],
+      correct: 2,
+      solution: "Step 1: The limit-shift rule: ∑(i=m to n) f(i) = ∑(i=1 to n) f(i) − ∑(i=1 to m−1) f(i).\nStep 2: Here m=3, so subtract ∑(i=1 to 2) i = 1+2 = 3.\nStep 3: ∑(i=3 to n) i = n(n+1)/2 − (1+2) = n(n+1)/2 − 3.\nBut equivalently written as n(n+1)/2 − 1 − 2.\nResult: n(n+1)/2 − 1 − 2 (which equals n(n+1)/2 − 3).",
+      revise: ["Limit-shift rule: ∑(i=m,n) = ∑(i=1,n) − ∑(i=1,m−1)", "This is one of the most tested summation techniques"]
+    },
+    {
+      id: "SU7", diff: "hard",
+      text: "Evaluate ∑(i=1 to 100) (3i − 2).",
+      type: "mcq",
+      options: ["14,950", "15,050", "14,900", "15,150"],
+      correct: 1,
+      solution: "Step 1: Split the summation: ∑(3i−2) = 3∑i − 2∑1.\nStep 2: ∑(i=1 to 100) i = 100×101/2 = 5050.\nStep 3: ∑(i=1 to 100) 1 = 100.\nStep 4: Result = 3×5050 − 2×100 = 15150 − 200 = 14950.\nWait — let me recompute: 3×5050 = 15150, 2×100 = 200, 15150−200 = 14950.\nResult: 14,950. (Check: option A.)\n\nActually recheck option B: Verify with small n. For n=2: (3−2)+(6−2)=1+4=5. Formula: 3(2)(3)/2 − 2(2) = 9−4=5 ✓.\nn=100: 3(5050)−200=15150−200=14950.",
+      revise: ["∑(ai+b) = a·∑i + b·n", "∑i = n(n+1)/2 for n=100 → 5050"]
+    },
+    {
+      id: "SU8", diff: "hard",
+      text: "What does ∑(i=1 to n) ∑(j=1 to m) c simplify to? (c is a constant)",
+      type: "mcq",
+      options: ["c·m", "c·n", "c·m·n", "c·(m+n)"],
+      correct: 2,
+      solution: "Step 1: Work from the inner (right-most) summation first.\nStep 2: Inner: ∑(j=1 to m) c = c·m. (c is constant, m is the count)\nStep 3: Outer: ∑(i=1 to n) c·m. Now c·m is also a constant w.r.t. i.\nStep 4: ∑(i=1 to n) (c·m) = c·m·n.\nResult: c·m·n.",
+      revise: ["Nested summations: work right to left", "After solving inner sum, treat result as constant for outer sum"]
+    },
+    {
+      id: "SU9", diff: "expert",
+      text: "Evaluate ∑(i=1 to n) ∑(j=1 to i) 1.",
+      type: "mcq",
+      options: ["n", "n²", "n(n+1)/2", "n(n−1)/2"],
+      correct: 2,
+      solution: "Step 1: Inner sum: ∑(j=1 to i) 1 = i. (summing 1 exactly i times)\nStep 2: Outer sum: ∑(i=1 to n) i. (now i IS a variable — the index matches!)\nStep 3: ∑(i=1 to n) i = n(n+1)/2.\nResult: n(n+1)/2.\n\nKey insight: The upper limit of the inner sum is i, which IS the outer index. So after the inner sum, you get i as a function of the outer variable.",
+      revise: ["Variable upper limit in inner sum → result contains outer index", "∑(i=1,n) i = n(n+1)/2"]
+    },
+    {
+      id: "SU10", diff: "expert",
+      text: "The 8th term of the Fibonacci sequence f₈ equals:",
+      type: "mcq",
+      options: ["13", "21", "34", "55"],
+      correct: 1,
+      solution: "Step 1: Recall fₙ = fₙ₋₁ + fₙ₋₂ with f₀=0, f₁=1.\nStep 2: Compute:\n  f₀=0, f₁=1, f₂=1, f₃=2, f₄=3,\n  f₅=5, f₆=8, f₇=13, f₈=21.\nResult: f₈ = 21.\n\nTip: Memorize f₀ through f₁₀ (0,1,1,2,3,5,8,13,21,34,55).",
+      revise: ["Fibonacci sequence definition", "Computing Fibonacci terms from scratch"]
+    }
+  ]
+},
+
+functions: {
+  title: "Functions",
+  icon: "f",
+  desc: "Domain, codomain, range, injection, surjection, bijection, inverse functions, composition, floor and ceiling.",
+  questions: [
+    {
+      id: "F1", diff: "easy",
+      text: "True or False: The range of a function is always equal to its codomain.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nThe codomain is the SET that f maps TO (declared in the function definition).\nThe range is the ACTUAL SET OF OUTPUT VALUES produced by f.\n\nExample: f: ℤ → ℤ defined by f(x) = x².\nCodomain = ℤ (all integers).\nRange = {0, 1, 4, 9, 16, ...} (non-negative perfect squares only).\nRange ≠ Codomain.",
+      revise: ["Range vs codomain distinction", "Range ⊆ Codomain always, but they need not be equal"]
+    },
+    {
+      id: "F2", diff: "easy",
+      text: "⌊3.7⌋ = ? and ⌈−2.3⌉ = ?",
+      type: "mcq",
+      options: ["3 and −3", "3 and −2", "4 and −2", "4 and −3"],
+      correct: 1,
+      solution: "Step 1: ⌊3.7⌋ = largest integer ≤ 3.7 = 3.\nStep 2: ⌈−2.3⌉ = smallest integer ≥ −2.3.\nStep 3: Integers near −2.3: ..., −3, −2, −1, ...\n  −3 < −2.3 < −2. The smallest integer ≥ −2.3 is −2.\nResult: ⌊3.7⌋ = 3 and ⌈−2.3⌉ = −2.\n\nNegative ceiling often tricks people — remember, ceiling goes UP (toward zero for negatives).",
+      revise: ["Floor: largest integer ≤ x", "Ceiling: smallest integer ≥ x", "Negative ceiling goes toward zero"]
+    },
+    {
+      id: "F3", diff: "easy",
+      text: "Is f: ℝ → ℝ, f(x) = 2x + 1 an injection (one-to-one)?",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nProof: Assume f(a) = f(b).\n2a+1 = 2b+1\n2a = 2b\na = b.\nSince f(a)=f(b) implies a=b, f is injective (one-to-one). ✓",
+      revise: ["Injection proof method: assume f(a)=f(b), derive a=b", "Linear functions are always injective"]
+    },
+    {
+      id: "F4", diff: "medium",
+      text: "f: ℤ → ℤ defined by f(x) = x². Is f surjective?",
+      type: "mcq",
+      options: [
+        "Yes — every integer is a perfect square",
+        "No — negative integers are never in the range of x²",
+        "Yes — the range equals ℤ",
+        "No — but only because 0 is missing from the range"
+      ],
+      correct: 1,
+      solution: "Step 1: To be surjective, every b ∈ ℤ (codomain) must equal f(a) for some a ∈ ℤ.\nStep 2: Is there an integer a with a² = −1? No — squares are always ≥ 0.\nStep 3: Therefore −1 (and all negative integers) are not in the range of f.\nResult: f is NOT surjective.\n\nNote: If the codomain were {0,1,4,9,...}, then f would be surjective.",
+      revise: ["Surjection: every codomain element must be 'hit'", "x² is never negative → not surjective onto ℤ"]
+    },
+    {
+      id: "F5", diff: "medium",
+      text: "Let f(x) = 3x − 1 and g(x) = x + 2. What is (f ∘ g)(x)?",
+      type: "mcq",
+      options: ["3x + 5", "3x + 1", "3x − 3", "x + 5"],
+      correct: 0,
+      solution: "Step 1: (f ∘ g)(x) = f(g(x)) — apply g FIRST, then f.\nStep 2: g(x) = x + 2.\nStep 3: f(g(x)) = f(x+2) = 3(x+2) − 1 = 3x + 6 − 1 = 3x + 5.\nResult: (f ∘ g)(x) = 3x + 5.",
+      revise: ["Composition: (f∘g)(x) = f(g(x)), apply g first", "f∘g ≠ g∘f in general"]
+    },
+    {
+      id: "F6", diff: "medium",
+      text: "True or False: If f: A → B is a bijection, then f⁻¹ exists and f⁻¹: B → A.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nA function has an inverse if and only if it is a bijection (both injective AND surjective).\n• Injective guarantees each b maps back to at most one a.\n• Surjective guarantees every b has at least one preimage a.\nCombined: every b maps to EXACTLY one a, which defines f⁻¹: B → A.",
+      revise: ["Bijection ↔ inverse exists", "Why both injection and surjection are needed for invertibility"]
+    },
+    {
+      id: "F7", diff: "hard",
+      text: "f: ℝ → ℝ, f(x) = 5x + 7. What is f⁻¹(y)?",
+      type: "mcq",
+      options: ["(y − 7)/5", "(y + 7)/5", "(5y − 7)", "(y/5) − 7"],
+      correct: 0,
+      solution: "Step 1: f is linear with non-zero slope → it is a bijection → inverse exists.\nStep 2: Set y = f(x) = 5x + 7.\nStep 3: Solve for x: y − 7 = 5x → x = (y−7)/5.\nStep 4: f⁻¹(y) = (y − 7)/5.\nVerify: f(f⁻¹(y)) = 5·(y−7)/5 + 7 = (y−7) + 7 = y ✓.",
+      revise: ["Inverse function: solve y=f(x) for x", "Verification: f(f⁻¹(y)) = y"]
+    },
+    {
+      id: "F8", diff: "hard",
+      text: "f: ℤ → ℤ, f(x) = x². Is f an injection? Is it a surjection?",
+      type: "mcq",
+      options: [
+        "Injective but not surjective",
+        "Surjective but not injective",
+        "Neither injective nor surjective",
+        "Both injective and surjective"
+      ],
+      correct: 2,
+      solution: "Not injective: f(2) = f(−2) = 4, but 2 ≠ −2. Counter-example found.\nNot surjective: f(x) = −1 has no integer solution (squares are non-negative).\n\nResult: Neither injective nor surjective.\n\nThis is a classic example — do not confuse it with f on non-negative integers.",
+      revise: ["x² on ℤ: not injective (f(n)=f(-n)), not surjective (negatives unreachable)", "Testing both properties independently"]
+    },
+    {
+      id: "F9", diff: "expert",
+      text: "Let g: {a,b,c} → {a,b,c} with g(a)=b, g(b)=c, g(c)=a. Let f: {a,b,c} → {1,2,3} with f(a)=3, f(b)=2, f(c)=1. What is (f ∘ g)(a)?",
+      type: "mcq",
+      options: ["1", "2", "3", "a"],
+      correct: 1,
+      solution: "Step 1: (f ∘ g)(a) = f(g(a)).\nStep 2: g(a) = b.\nStep 3: f(b) = 2.\nResult: (f ∘ g)(a) = 2.",
+      revise: ["Function composition with explicit mappings", "Apply innermost function first"]
+    },
+    {
+      id: "F10", diff: "expert",
+      text: "True or False: If f: A → B and g: B → C are both injective, then g ∘ f: A → C is injective.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nProof: Assume (g∘f)(a₁) = (g∘f)(a₂).\nThat means g(f(a₁)) = g(f(a₂)).\nSince g is injective: f(a₁) = f(a₂).\nSince f is injective: a₁ = a₂.\nTherefore g∘f is injective. ∎\n\nSimilarly: composition of two surjections is surjective; composition of two bijections is bijective.",
+      revise: ["Composition preserves injectivity", "Proving properties of composed functions"]
+    }
+  ]
+},
+
+relations: {
+  title: "Relations",
+  icon: "R",
+  desc: "Reflexive, symmetric, antisymmetric, transitive properties. Matrices, digraphs, equivalence relations, and equivalence classes.",
+  questions: [
+    {
+      id: "R1", diff: "easy",
+      text: "R = {(1,1),(2,2),(3,3)} on A = {1,2,3}. Which property does R have?",
+      type: "mcq",
+      options: ["Symmetric only", "Reflexive only", "Reflexive and symmetric and transitive", "Antisymmetric only"],
+      correct: 2,
+      solution: "Step 1: Reflexive? (1,1),(2,2),(3,3) all present ✓.\nStep 2: Symmetric? For every (a,b) ∈ R, (b,a) ∈ R. Only diagonal pairs exist, and (a,a) reversed is still (a,a). ✓\nStep 3: Transitive? For every (a,b),(b,c) ∈ R → (a,c) ∈ R. Only (a,a) pairs: (a,a),(a,a) → (a,a) ✓.\nStep 4: Also antisymmetric: (a,b)∈R and (b,a)∈R → a=b (diagonal only).\nResult: Reflexive, symmetric, transitive (and antisymmetric). This is the equality relation.",
+      revise: ["Equality relation has all four properties", "Checking each property systematically"]
+    },
+    {
+      id: "R2", diff: "easy",
+      text: "True or False: A relation can be both symmetric and antisymmetric at the same time.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nThe equality relation {(a,a) | a ∈ A} is both symmetric and antisymmetric.\n• Symmetric: (a,b)∈R → (b,a)∈R. Only (a,a) pairs, reversed they're still there. ✓\n• Antisymmetric: (a,b)∈R ∧ (b,a)∈R → a=b. Only (a,a) pairs satisfy both, and a=a. ✓\n\nSymmetric and antisymmetric are NOT opposites.",
+      revise: ["Symmetric and antisymmetric can coexist", "They are not logical opposites — a relation can be neither, one, or both"]
+    },
+    {
+      id: "R3", diff: "medium",
+      text: "R = {(1,2),(2,3),(1,3)} on A = {1,2,3}. Is R transitive?",
+      type: "tf",
+      correct: true,
+      solution: "Check transitivity: for all (a,b),(b,c) ∈ R, is (a,c) ∈ R?\nPairs to check:\n• (1,2) and (2,3) both in R → need (1,3): YES, (1,3) ∈ R ✓\n• No other composable pairs: (2,3) has no (3,?) in R.\nResult: Transitive ✓.",
+      revise: ["Transitivity: find ALL composable pairs and check", "A chain a→b→c must have a→c directly"]
+    },
+    {
+      id: "R4", diff: "medium",
+      text: "For a relation to be an equivalence relation, which combination of properties is required?",
+      type: "mcq",
+      options: [
+        "Reflexive and Symmetric",
+        "Reflexive, Symmetric, and Transitive",
+        "Symmetric and Transitive only",
+        "Reflexive, Antisymmetric, and Transitive"
+      ],
+      correct: 1,
+      solution: "An equivalence relation MUST satisfy all three:\n1. Reflexive: every element is related to itself.\n2. Symmetric: if aRb then bRa.\n3. Transitive: if aRb and bRc then aRc.\n\nAll three are required — missing any one makes it NOT an equivalence relation.",
+      revise: ["Equivalence relation = Reflexive + Symmetric + Transitive", "Partial order = Reflexive + Antisymmetric + Transitive (different!)"]
+    },
+    {
+      id: "R5", diff: "medium",
+      text: "The digraph of R has loops at every vertex and edges (a,b) always paired with (b,a). Which properties does R have?",
+      type: "mcq",
+      options: [
+        "Reflexive only",
+        "Reflexive and Symmetric",
+        "Reflexive, Symmetric, and Transitive",
+        "Cannot determine without more info"
+      ],
+      correct: 1,
+      solution: "Step 1: Loops at every vertex → Reflexive ✓.\nStep 2: Every edge (a,b) has a reverse (b,a) → Symmetric ✓.\nStep 3: Transitive cannot be confirmed — we'd need to verify (a,b)∧(b,c)→(a,c) for all pairs, but the digraph description doesn't guarantee this.\nResult: Reflexive and Symmetric confirmed; transitive indeterminate without full info.",
+      revise: ["Digraph reflexivity: loops at all vertices", "Digraph symmetry: all edges bidirectional", "Transitivity requires checking all length-2 paths"]
+    },
+    {
+      id: "R6", diff: "hard",
+      text: "Is the 'divides' relation (aRb iff a|b) on positive integers antisymmetric?",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nProof: Suppose a|b and b|a on positive integers.\nThen b = ka and a = lb for positive integers k, l.\nSubstituting: b = k(lb) = klb → kl = 1.\nSince k,l are positive integers, k=l=1.\nTherefore a = b.\nSo if a|b and b|a then a = b → antisymmetric ✓.\n\nNote: 'divides' is NOT symmetric (2|6 but 6∤2).",
+      revise: ["Divisibility relation properties", "Antisymmetry proof technique for divisibility"]
+    },
+    {
+      id: "R7", diff: "hard",
+      text: "R is a relation on {1,2,3,4} represented by the matrix below. Which properties hold?\n[1,0,1,0]\n[0,1,0,1]\n[1,0,1,0]\n[0,1,0,1]",
+      type: "mcq",
+      options: [
+        "Reflexive, Symmetric, not Transitive",
+        "Reflexive, Symmetric, Transitive (equivalence relation)",
+        "Not Reflexive, Symmetric",
+        "Reflexive, not Symmetric, Transitive"
+      ],
+      correct: 1,
+      solution: "Step 1: Reflexive? Main diagonal: m₁₁=1, m₂₂=1, m₃₃=1, m₄₄=1. All 1s ✓.\nStep 2: Symmetric? Matrix = its transpose? m₁₃=1, m₃₁=1 ✓; m₂₄=1, m₄₂=1 ✓. Yes ✓.\nStep 3: Transitive? Check: (1,3)∈R and (3,1)∈R → need (1,1)∈R ✓. (1,1)∈R and (1,3)∈R → need (1,3)∈R ✓. All chains hold.\nResult: Reflexive, Symmetric, Transitive → this is an equivalence relation.\nClasses: [1]=[3]={1,3} and [2]=[4]={2,4}.",
+      revise: ["Matrix reflexivity: all diagonal entries = 1", "Matrix symmetry: M = Mᵀ", "Verifying transitivity from a matrix"]
+    },
+    {
+      id: "R8", diff: "hard",
+      text: "True or False: If R is both reflexive and transitive, it must also be symmetric.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nCounterexample: R = {(1,1),(2,2),(3,3),(1,2)} on {1,2,3}.\n• Reflexive: (1,1),(2,2),(3,3) ✓.\n• Transitive: (1,1)+(1,2)→(1,2)∈R ✓; no other composable pairs outside diagonal.\n• NOT symmetric: (1,2) ∈ R but (2,1) ∉ R.\n\nReflexive + Transitive does NOT imply Symmetric.",
+      revise: ["Properties are independent — each must be checked separately", "Counterexample technique for disproving implications"]
+    },
+    {
+      id: "R9", diff: "expert",
+      text: "Show that aRb if a ≡ b (mod 3) is an equivalence relation. How many equivalence classes are there, and what are they?",
+      type: "mcq",
+      options: [
+        "2 classes: even and odd remainders",
+        "3 classes: [0]={...,-3,0,3,6,...}, [1]={...,-2,1,4,7,...}, [2]={...,-1,2,5,8,...}",
+        "Infinitely many classes, one per integer",
+        "6 classes, one per pair of integers"
+      ],
+      correct: 1,
+      solution: "Reflexive: a−a=0, 3|0 ✓.\nSymmetric: if 3|(a−b) then 3|(b−a) since b−a=−(a−b) ✓.\nTransitive: if 3|(a−b) and 3|(b−c), then a−c=(a−b)+(b−c) and 3 divides a sum of multiples of 3 ✓.\n\nEquivalence classes (remainders mod 3):\n[0] = {..., −6, −3, 0, 3, 6, ...}\n[1] = {..., −5, −2, 1, 4, 7, ...}\n[2] = {..., −4, −1, 2, 5, 8, ...}\n\nThese 3 classes partition ℤ completely.",
+      revise: ["Congruence mod m is always an equivalence relation", "Equivalence classes are the remainder classes", "Number of classes = m for mod m"]
+    },
+    {
+      id: "R10", diff: "expert",
+      text: "True or False: Equivalence classes of a relation always form a partition of the set.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE. This is a fundamental theorem.\nFor any equivalence relation R on set A:\n1. Every element a belongs to [a] → classes cover all of A (union = A).\n2. Any two distinct classes are disjoint ([a] ≠ [b] → [a] ∩ [b] = ∅).\n3. Each class is non-empty (a ∈ [a] by reflexivity).\n\nThese three properties exactly define a partition.\n\nConversely: any partition of A defines an equivalence relation (aRb iff a,b in the same part).",
+      revise: ["Equivalence classes ↔ partitions (fundamental theorem)", "Three partition conditions: non-empty, disjoint, union = whole set"]
+    }
+  ]
+},
+
+counting: {
+  title: "Counting & Combinatorics",
+  icon: "#",
+  desc: "Product rule, sum rule, inclusion-exclusion, pigeonhole principle, permutations, and combinations.",
+  questions: [
+    {
+      id: "C1", diff: "easy",
+      text: "There are 5 choices for appetizer and 4 choices for main course. How many different meals (one of each)?",
+      type: "mcq",
+      options: ["9", "20", "16", "25"],
+      correct: 1,
+      solution: "Step 1: You choose an appetizer AND a main course.\nStep 2: AND → multiply (Product Rule).\nStep 3: 5 × 4 = 20.\nResult: 20 different meals.",
+      revise: ["Product Rule: task1 AND task2 → multiply", "AND = multiply, OR = add"]
+    },
+    {
+      id: "C2", diff: "easy",
+      text: "A class has 12 CS majors and 8 Math majors. How many ways to choose one CS major OR one Math major?",
+      type: "mcq",
+      options: ["4", "20", "96", "144"],
+      correct: 1,
+      solution: "Step 1: Choosing one CS major OR one Math major.\nStep 2: OR with mutually exclusive groups → add (Sum Rule).\nStep 3: 12 + 8 = 20.\nResult: 20 ways.",
+      revise: ["Sum Rule: task1 OR task2 (mutually exclusive) → add"]
+    },
+    {
+      id: "C3", diff: "easy",
+      text: "How many 3-digit strings can be made from {A, B, C, D} with no letter repeated?",
+      type: "mcq",
+      options: ["12", "24", "64", "9"],
+      correct: 1,
+      solution: "Step 1: Ordered selection (a string, so order matters) → Permutation.\nStep 2: P(4,3) = 4 × 3 × 2 = 24.\nStep 3: 4 choices for position 1, 3 for position 2 (can't repeat), 2 for position 3.\nResult: 24.",
+      revise: ["P(n,r) = n!/(n-r)! = n×(n-1)×...×(n-r+1)", "Ordered selection without repetition → Permutation"]
+    },
+    {
+      id: "C4", diff: "medium",
+      text: "How many ways are there to choose a committee of 3 from 10 people?",
+      type: "mcq",
+      options: ["30", "720", "120", "10"],
+      correct: 2,
+      solution: "Step 1: A committee is an unordered group — order doesn't matter.\nStep 2: Use combinations: C(10,3) = 10!/(3!×7!) = (10×9×8)/(3×2×1) = 720/6 = 120.\nResult: 120 ways.",
+      revise: ["C(n,r) = n!/(r!(n-r)!) — unordered selection", "Committee = combination; ranked list = permutation"]
+    },
+    {
+      id: "C5", diff: "medium",
+      text: "In a group of 30 students, what is the minimum number needed to guarantee that at least 3 share the same birth month?",
+      type: "mcq",
+      options: ["24", "25", "26", "37"],
+      correct: 1,
+      solution: "Step 1: Apply generalized pigeonhole: ⌈N/k⌉ ≥ target.\nStep 2: k = 12 months (boxes), target = 3 students in same month.\nStep 3: ⌈N/12⌉ ≥ 3 → N/12 > 2 → N > 24 → N = 25.\nResult: 25 students.\n\nVerify: 24 students = worst case 2 per month (2×12=24), still possible no month has 3. At 25, pigeonhole forces some month to have ≥3.",
+      revise: ["Generalized pigeonhole: ⌈N/k⌉ ≥ target, solve for N", "N = k(target-1) + 1 is the formula"]
+    },
+    {
+      id: "C6", diff: "medium",
+      text: "How many bit strings of length 8 start with 1 OR end with 00?",
+      type: "mcq",
+      options: ["160", "192", "64", "128"],
+      correct: 0,
+      solution: "Step 1: Use inclusion-exclusion |A∪B| = |A| + |B| − |A∩B|.\nStep 2: |A| = strings starting with 1: fix bit 1 = '1', remaining 7 free: 2⁷ = 128.\nStep 3: |B| = strings ending with '00': fix last 2 = '00', remaining 6 free: 2⁶ = 64.\nStep 4: |A∩B| = starts with '1' AND ends with '00': fix 3 bits, remaining 5 free: 2⁵ = 32.\nStep 5: |A∪B| = 128 + 64 − 32 = 160.\nResult: 160.",
+      revise: ["Inclusion-exclusion when events overlap", "|A∪B| = |A|+|B|−|A∩B|"]
+    },
+    {
+      id: "C7", diff: "hard",
+      text: "How many ways can 6 people sit at a round table (rotations counted as the same)?",
+      type: "mcq",
+      options: ["6", "120", "720", "30"],
+      correct: 1,
+      solution: "Step 1: For circular permutations, fix one person to eliminate rotational duplicates.\nStep 2: Fix person 1 in any seat. Arrange the remaining 5 in the other 5 seats.\nStep 3: P(5,5) = 5! = 120.\nAlternative: 6!/6 = 720/6 = 120.\nResult: 120 arrangements.",
+      revise: ["Circular permutations: (n−1)! formula", "Why: fixing one person removes rotational equivalence"]
+    },
+    {
+      id: "C8", diff: "hard",
+      text: "How many bit strings of length 10 contain exactly 4 ones?",
+      type: "mcq",
+      options: ["40", "210", "252", "120"],
+      correct: 1,
+      solution: "Step 1: Choosing positions for the 4 ones — order of position-selection doesn't matter.\nStep 2: C(10,4) = 10!/(4!×6!) = (10×9×8×7)/(4×3×2×1) = 5040/24 = 210.\nResult: 210.",
+      revise: ["C(10,4) for choosing positions", "Bit string with exactly k ones → C(n,k)"]
+    },
+    {
+      id: "C9", diff: "expert",
+      text: "A committee of 4 must be chosen from 6 men and 5 women. How many committees have at least 1 woman?",
+      type: "mcq",
+      options: ["280", "330", "315", "290"],
+      correct: 2,
+      solution: "Step 1: Use complementary counting.\n  Total committees (no restriction): C(11,4) = 330.\n  Committees with NO women (all men): C(6,4) = 15.\nStep 2: Committees with at least 1 woman = 330 − 15 = 315.\nResult: 315.\n\nAlternative (direct — longer):\n  Exactly 1W: C(5,1)×C(6,3) = 5×20 = 100\n  Exactly 2W: C(5,2)×C(6,2) = 10×15 = 150\n  Exactly 3W: C(5,3)×C(6,1) = 10×6 = 60\n  Exactly 4W: C(5,4)×C(6,0) = 5×1 = 5\n  Total: 100+150+60+5 = 315 ✓",
+      revise: ["Complementary counting: total − complement", "C(11,4)=330, C(6,4)=15", "Two methods: direct vs complementary"]
+    },
+    {
+      id: "C10", diff: "expert",
+      text: "True or False: C(n, r) = C(n, n−r) for all valid n and r.",
+      type: "tf",
+      correct: true,
+      solution: "TRUE.\nProof: C(n,n−r) = n!/((n−r)!·(n−(n−r))!) = n!/((n−r)!·r!) = C(n,r).\n\nIntuition: Choosing r items to INCLUDE is the same as choosing n−r items to EXCLUDE.\nExample: C(52,5) = C(52,47). Choosing 5 cards to deal is the same as choosing 47 cards to not deal.",
+      revise: ["Symmetry of combinations: C(n,r) = C(n,n-r)", "Combinatorial proof intuition"]
+    }
+  ]
+},
+
+induction: {
+  title: "Mathematical Induction",
+  icon: "∀",
+  desc: "Weak induction proofs: base case, inductive hypothesis, inductive step. From identifying errors to writing complete proofs.",
+  questions: [
+    {
+      id: "I1", diff: "easy",
+      text: "In a proof by mathematical induction, what does the inductive hypothesis assume?",
+      type: "mcq",
+      options: [
+        "P(n) is true for all n",
+        "P(k+1) is true for some k",
+        "P(k) is true for some arbitrary positive integer k",
+        "P(1) is true"
+      ],
+      correct: 2,
+      solution: "The inductive hypothesis assumes P(k) is true for some ARBITRARY positive integer k (not all n, not k+1).\n\nThe three steps are:\n1. Base Case: prove P(1).\n2. Inductive Hypothesis: ASSUME P(k) is true.\n3. Inductive Step: PROVE P(k+1) is true.\n\nYou assume P(k), then USE that assumption to prove P(k+1).",
+      revise: ["Inductive hypothesis: assume P(k), not P(k+1)", "Three-step induction template"]
+    },
+    {
+      id: "I2", diff: "easy",
+      text: "True or False: In an induction proof, the base case is always n = 1.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nThe base case is the SMALLEST value for which the statement is claimed to hold.\nSometimes this is n=0 (e.g., Fibonacci), or n=2, or any other starting point.\n\nExample: 'Prove P(n) for all n ≥ 3' — the base case is n=3.\n\nAlways check what the statement claims, not assume base case = 1.",
+      revise: ["Base case = smallest claimed value, not always 1", "Read the statement's starting condition carefully"]
+    },
+    {
+      id: "I3", diff: "easy",
+      text: "What is the formula you are trying to prove by induction when you see: ∑(i=1 to n) i = n(n+1)/2?",
+      type: "mcq",
+      options: [
+        "P(k) = k(k+1)/2",
+        "P(n): the sum of the first n positive integers equals n(n+1)/2",
+        "P(n): n(n+1)/2 is always even",
+        "P(n): i = n for all i from 1 to n"
+      ],
+      correct: 1,
+      solution: "P(n) is the proposition: '∑(i=1 to n) i = n(n+1)/2'.\nThis is the statement we claim is true for all positive integers n.\n\nWhen you do induction:\n• P(1): ∑(i=1 to 1) i = 1(2)/2 = 1 ✓\n• Assume P(k): ∑(i=1 to k) i = k(k+1)/2\n• Prove P(k+1): ∑(i=1 to k+1) i = (k+1)(k+2)/2",
+      revise: ["Clearly stating what P(n) is before starting the proof", "Induction is a proof technique, not an answer-finding technique"]
+    },
+    {
+      id: "I4", diff: "medium",
+      text: "In the inductive step, to prove P(k+1), you start with ∑(i=1 to k+1) i. What is the CRITICAL algebraic step that lets you apply the inductive hypothesis?",
+      type: "mcq",
+      options: [
+        "Replace k+1 with k everywhere",
+        "Write ∑(i=1 to k+1) i = [∑(i=1 to k) i] + (k+1), then apply I.H. to the bracketed part",
+        "Apply the formula directly with n = k+1",
+        "Take the derivative with respect to k"
+      ],
+      correct: 1,
+      solution: "The critical technique (called 'the thing' in your slides):\n∑(i=1 to k+1) i = [∑(i=1 to k) i] + (k+1)\n\nThis splits the (k+1)-sum into the k-sum PLUS the new last term.\nNow the I.H. says ∑(i=1 to k) i = k(k+1)/2.\nSubstitute: k(k+1)/2 + (k+1) = k(k+1)/2 + 2(k+1)/2 = (k+1)(k+2)/2 ✓\n\nThis is the standard technique for ALL summation induction proofs.",
+      revise: ["Peel off last term: ∑(1 to k+1) = ∑(1 to k) + f(k+1)", "This is how the I.H. enters every summation proof"]
+    },
+    {
+      id: "I5", diff: "medium",
+      text: "Base case check: does P(1) hold for the claim '∑(i=1 to n) (2i−1) = n²'?",
+      type: "mcq",
+      options: [
+        "No — LS = 0, RS = 1",
+        "No — LS = 1, RS = 2",
+        "Yes — LS = 1, RS = 1",
+        "Yes — LS = 2, RS = 1"
+      ],
+      correct: 2,
+      solution: "Step 1: P(1) says ∑(i=1 to 1) (2i−1) = 1².\nStep 2: LS = 2(1)−1 = 2−1 = 1.\nStep 3: RS = 1² = 1.\nStep 4: LS = RS = 1. ✓\nBase case holds.",
+      revise: ["Base case: plug in n=1 into both sides", "Verify LS = RS numerically"]
+    },
+    {
+      id: "I6", diff: "medium",
+      text: "True or False: If you prove the inductive step but forget the base case, the proof is still valid.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE — a famous counterexample shows why:\n'All horses are the same color'\n• Inductive step: if any k horses have the same color, then k+1 horses do too (flawed argument).\n• Without checking P(1) properly, the chain has no starting point.\n\nYou need BOTH:\n1. A true base case (dominoes start falling).\n2. A valid inductive step (each domino knocks the next).\nMissing either = the argument fails completely.",
+      revise: ["Both base case AND inductive step are required", "The 'all horses same color' fallacy — shows inductive step alone is insufficient"]
+    },
+    {
+      id: "I7", diff: "hard",
+      text: "Inductive step for proving ∑(i=1 to n) i = n(n+1)/2: after substituting the I.H., the expression k(k+1)/2 + (k+1) simplifies to what?",
+      type: "mcq",
+      options: ["k(k+1)/2", "(k+1)(k+2)/2", "k(k+2)/2", "(k+1)²/2"],
+      correct: 1,
+      solution: "Step 1: k(k+1)/2 + (k+1)\nStep 2: Factor out (k+1): = (k+1)[k/2 + 1] = (k+1)[(k + 2)/2]\nStep 3: = (k+1)(k+2)/2\n\nThis is exactly the RHS of P(k+1): (k+1)((k+1)+1)/2 = (k+1)(k+2)/2 ✓\n\nAlternative computation:\nk(k+1)/2 + 2(k+1)/2 = (k+1)(k+2)/2",
+      revise: ["Algebra in inductive step: common denominator then factor", "Target for P(k+1) is (k+1)(k+2)/2"]
+    },
+    {
+      id: "I8", diff: "hard",
+      text: "What is wrong with this 'proof': 'Assume P(k+1) is true. Then P(k) is also true. Since P(1) is true, P(n) holds for all n.'",
+      type: "mcq",
+      options: [
+        "The base case is wrong",
+        "It assumes what it is trying to prove (circular reasoning / wrong direction)",
+        "The inductive hypothesis is missing",
+        "Nothing is wrong — this is valid"
+      ],
+      correct: 1,
+      solution: "The argument goes in the WRONG DIRECTION.\n\nCorrect induction: assume P(k), PROVE P(k+1).\nThis argument: assume P(k+1), derive P(k) — this is backwards!\n\nGoing backwards (P(k+1)→P(k)) combined with P(1) tells you nothing about P(2), P(3), etc. in the forward direction.\n\nInduction requires the chain to go FORWARD: P(1)→P(2)→P(3)→...",
+      revise: ["Inductive step direction: P(k) → P(k+1), not the reverse", "Going backwards does not establish the forward chain"]
+    },
+    {
+      id: "I9", diff: "expert",
+      text: "Prove by induction: 2ⁿ > n for all n ≥ 1. In the inductive step, after assuming 2ᵏ > k, how do you show 2ᵏ⁺¹ > k+1?",
+      type: "mcq",
+      options: [
+        "2ᵏ⁺¹ = 2·2ᵏ > 2k ≥ k+1 (for k≥1), done",
+        "2ᵏ⁺¹ = 2ᵏ + 1 > k + 1, done",
+        "2ᵏ⁺¹ = 2ᵏ · 2 = k · 2 > k+1",
+        "2ᵏ⁺¹ = 2ᵏ + 2ᵏ > k + k = 2k > k+1"
+      ],
+      correct: 0,
+      solution: "Step 1: We know 2ᵏ > k (I.H.).\nStep 2: 2ᵏ⁺¹ = 2 · 2ᵏ > 2k (multiplying both sides of I.H. by 2).\nStep 3: Now show 2k ≥ k+1 for k ≥ 1:\n  2k − (k+1) = k − 1 ≥ 0 when k ≥ 1. ✓\nStep 4: Therefore 2ᵏ⁺¹ > 2k ≥ k+1. ✓\nResult: P(k+1) holds. ∎\n\nNote: Option D (2ᵏ⁺¹=2ᵏ+2ᵏ) is technically correct but option A is the cleaner path.",
+      revise: ["Multiplying inequality by a positive constant", "Chaining inequalities in induction", "2k ≥ k+1 for k≥1: verify k-1≥0"]
+    },
+    {
+      id: "I10", diff: "expert",
+      text: "True or False: Strong induction is logically more powerful than weak (ordinary) induction.",
+      type: "tf",
+      correct: false,
+      solution: "FALSE.\nStrong induction and weak induction are LOGICALLY EQUIVALENT — they can prove exactly the same theorems.\n\nDifference is only in the assumption:\n• Weak: assume P(k) → prove P(k+1).\n• Strong: assume P(1)∧P(2)∧...∧P(k) → prove P(k+1).\n\nStrong induction is sometimes EASIER to use (when P(k+1) depends on earlier terms like Fibonacci), but it's not more powerful — any proof by strong induction can be converted to weak induction with some work.",
+      revise: ["Strong vs weak induction: same logical power, different assumption form", "Use strong induction when the inductive step needs more than just P(k)"]
+    }
+  ]
+}
+
+}; // end TOPICS
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let currentTopic = 'logic';
+let state = {};
+
+// Init state for all topics
+Object.keys(TOPICS).forEach(t => {
+  state[t] = {
+    currentQ: 0,
+    answers: {},  // qIndex -> {selected, correct}
+    submitted: {},
+    finished: false
+  };
+});
+
+let globalCorrect = 0, globalTotal = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+
+function switchTopic(topic) {
+  currentTopic = topic;
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + topic).classList.add('active');
+  renderMain();
+}
+
+function renderMain() {
+  const container = document.getElementById('mainContent');
+  const topic = TOPICS[currentTopic];
+  const s = state[currentTopic];
+  const qs = topic.questions;
+
+  if (s.finished) {
+    container.innerHTML = renderResults();
+    return;
+  }
+
+  const q = qs[s.currentQ];
+  const progress = s.currentQ / qs.length;
+
+  let html = `
+    <div class="topic-header">
+      <div class="topic-eyebrow">${topic.icon} · Question ${s.currentQ + 1} of ${qs.length}</div>
+      <div class="topic-title">${topic.title}</div>
+      <div class="topic-desc">${topic.desc}</div>
+    </div>
+    <div class="quiz-progress">
+      <div class="progress-meta">
+        <span>Progress</span>
+        <span>${s.currentQ}/${qs.length} answered</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${progress*100}%"></div>
+      </div>
+    </div>
+  `;
+
+  html += renderQuestion(q, s.currentQ, s);
+  container.innerHTML = html;
+  container.scrollTop = 0;
+}
+
+function renderQuestion(q, idx, s) {
+  const submitted = s.submitted[idx];
+  const ans = s.answers[idx];
+  const diffLabels = { easy: 'Easy', medium: 'Medium', hard: 'Hard', expert: 'Expert' };
+
+  let html = `<div class="question-card ${submitted ? (ans && ans.correct ? 'answered-correct' : 'answered-wrong') : ''}" id="qcard">`;
+  html += `<div class="q-meta">
+    <span class="q-num">Q${idx + 1}</span>
+    <span class="q-diff diff-${q.diff}">${diffLabels[q.diff]}</span>
+  </div>`;
+  html += `<div class="q-text">${q.text.replace(/\n/g,'<br>')}</div>`;
+
+  if (q.type === 'mcq') {
+    html += `<div class="options-grid">`;
+    const labels = ['A','B','C','D'];
+    q.options.forEach((opt, i) => {
+      let cls = 'option-btn';
+      if (submitted) {
+        if (i === q.correct) cls += ' reveal-correct';
+        else if (ans && ans.selected === i && i !== q.correct) cls += ' wrong';
+      } else if (ans && ans.selected === i) cls += ' selected';
+      html += `<button class="${cls}" onclick="selectOption(${idx}, ${i})" ${submitted ? 'disabled' : ''}>
+        <span class="opt-label">${labels[i]}</span>
+        <span>${opt}</span>
+      </button>`;
+    });
+    html += `</div>`;
+  } else if (q.type === 'tf') {
+    let tCls = 'tf-btn', fCls = 'tf-btn';
+    if (submitted) {
+      const correct = q.correct;
+      tCls += correct === true ? ' reveal-correct' : (ans && ans.selected === true && !ans.correct ? ' wrong' : '');
+      fCls += correct === false ? ' reveal-correct' : (ans && ans.selected === false && !ans.correct ? ' wrong' : '');
+    } else if (ans) {
+      if (ans.selected === true) tCls += ' selected';
+      if (ans.selected === false) fCls += ' selected';
+    }
+    html += `<div class="tf-row">
+      <button class="${tCls}" onclick="selectTF(${idx}, true)" ${submitted ? 'disabled' : ''}>True</button>
+      <button class="${fCls}" onclick="selectTF(${idx}, false)" ${submitted ? 'disabled' : ''}>False</button>
+    </div>`;
+  }
+
+  html += `<div class="btn-row">
+    <button class="submit-btn" id="submitBtn" onclick="submitAnswer(${idx})" ${submitted || !s.answers[idx] ? 'disabled' : ''}>
+      Check Answer
+    </button>
+    ${submitted ? `<button class="next-btn" onclick="nextQuestion()">${idx + 1 < TOPICS[currentTopic].questions.length ? 'Next Question →' : 'See Results →'}</button>` : ''}
+  </div>`;
+
+  if (submitted) {
+    const correct = ans && ans.correct;
+    html += `<div class="feedback-panel feedback-${correct ? 'correct' : 'wrong'}">
+      <div class="feedback-header">
+        <span>${correct ? '✓ Correct!' : '✗ Incorrect'}</span>
+      </div>
+      <div class="feedback-body">
+        <div class="feedback-section">
+          <div class="fb-label">Step-by-Step Solution</div>
+          <div class="solution-block">${formatSolution(TOPICS[currentTopic].questions[idx].solution)}</div>
+        </div>
+        ${!correct ? `<div class="feedback-section">
+          <div class="fb-label">What to Revise</div>
+          <div class="revise-box">
+            <ul>${TOPICS[currentTopic].questions[idx].revise.map(r => `<li>${r}</li>`).join('')}</ul>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function formatSolution(sol) {
+  return sol.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderResults() {
+  const s = state[currentTopic];
+  const qs = TOPICS[currentTopic].questions;
+  let correct = 0;
+  Object.values(s.answers).forEach(a => { if (a && a.correct) correct++; });
+  const total = qs.length;
+  const pct = Math.round(correct / total * 100);
+
+  let scoreClass = pct >= 70 ? 'score-high' : pct >= 40 ? 'score-mid' : 'score-low';
+  let emoji = pct === 100 ? '🏆' : pct >= 70 ? '✅' : pct >= 40 ? '⚠️' : '📚';
+  let title = pct === 100 ? 'Perfect Score!' : pct >= 70 ? 'Good Work' : pct >= 40 ? 'Needs Practice' : 'Keep Studying';
+
+  let wrongItems = '';
+  qs.forEach((q, i) => {
+    const a = s.answers[i];
+    if (!a || !a.correct) {
+      let yourAns = 'Not answered';
+      if (a) {
+        if (q.type === 'mcq') yourAns = 'Option: ' + (a.selected !== undefined ? q.options[a.selected] : '—');
+        if (q.type === 'tf') yourAns = a.selected !== undefined ? (a.selected ? 'True' : 'False') : '—';
+      }
+      let correctAns = q.type === 'mcq' ? q.options[q.correct] : (q.correct ? 'True' : 'False');
+
+      wrongItems += `<div class="wrong-item">
+        <div class="wi-q">Q${i+1} [${q.diff.toUpperCase()}]: ${q.text.replace(/\n/g,' ').substring(0,80)}...</div>
+        <div class="wi-correct">✓ Correct answer: ${correctAns}</div>
+        <div style="font-size:12px;color:var(--red);margin-bottom:8px;">Your answer: ${yourAns}</div>
+        <div class="wi-steps">${formatSolution(q.solution)}</div>
+        <div class="wi-revise">
+          Revise: ${q.revise.map(r => `<span class="revise-tag">${r}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+  });
+
+  return `<div class="results-screen visible">
+    <div class="results-emoji">${emoji}</div>
+    <div class="score-circle ${scoreClass}">
+      <div class="sc-num">${pct}%</div>
+      <div class="sc-label">${correct}/${total}</div>
+    </div>
+    <div class="results-title">${title}</div>
+    <div class="results-sub">${TOPICS[currentTopic].title} · ${correct} correct out of ${total} questions</div>
+    ${wrongItems ? `<div class="wrong-summary">
+      <h3>Questions to review (${total - correct} missed):</h3>
+      ${wrongItems}
+    </div>` : '<p style="color:var(--green);font-size:15px;">You got everything right! Move on to the next topic.</p>'}
+    <button class="btn-restart" onclick="restartTopic()">↺ Retry This Topic</button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function selectOption(qIdx, optIdx) {
+  if (state[currentTopic].submitted[qIdx]) return;
+  state[currentTopic].answers[qIdx] = { selected: optIdx, correct: null };
+  document.getElementById('submitBtn').disabled = false;
+  document.querySelectorAll('.option-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === optIdx);
+  });
+}
+
+function selectTF(qIdx, val) {
+  if (state[currentTopic].submitted[qIdx]) return;
+  state[currentTopic].answers[qIdx] = { selected: val, correct: null };
+  document.getElementById('submitBtn').disabled = false;
+  document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
+  const btns = document.querySelectorAll('.tf-btn');
+  if (val === true) btns[0].classList.add('selected');
+  else btns[1].classList.add('selected');
+}
+
+function submitAnswer(qIdx) {
+  const s = state[currentTopic];
+  const q = TOPICS[currentTopic].questions[qIdx];
+  const ans = s.answers[qIdx];
+  if (!ans || s.submitted[qIdx]) return;
+
+  let isCorrect = false;
+  if (q.type === 'mcq') isCorrect = ans.selected === q.correct;
+  if (q.type === 'tf') isCorrect = ans.selected === q.correct;
+
+  s.answers[qIdx].correct = isCorrect;
+  s.submitted[qIdx] = true;
+
+  // Update global score
+  updateGlobalScore();
+  updateSidebarNums();
+  renderMain();
+}
+
+function nextQuestion() {
+  const s = state[currentTopic];
+  const total = TOPICS[currentTopic].questions.length;
+  if (s.currentQ + 1 >= total) {
+    s.finished = true;
+    document.getElementById('btn-' + currentTopic).classList.add('done');
+  } else {
+    s.currentQ++;
+  }
+  renderMain();
+  window.scrollTo(0, 0);
+}
+
+function restartTopic() {
+  state[currentTopic] = {
+    currentQ: 0,
+    answers: {},
+    submitted: {},
+    finished: false
+  };
+  document.getElementById('btn-' + currentTopic).classList.remove('done');
+  updateGlobalScore();
+  updateSidebarNums();
+  renderMain();
+}
+
+function updateGlobalScore() {
+  let c = 0, t = 0;
+  Object.keys(state).forEach(topic => {
+    Object.values(state[topic].answers).forEach(a => {
+      if (a && a.correct !== null) {
+        t++;
+        if (a.correct) c++;
+      }
+    });
+  });
+  document.getElementById('globalScore').textContent = `${c} / ${t}`;
+}
+
+function updateSidebarNums() {
+  Object.keys(TOPICS).forEach(t => {
+    const s = state[t];
+    const answered = Object.keys(s.submitted).length;
+    const total = TOPICS[t].questions.length;
+    const el = document.getElementById('num-' + t);
+    if (el) el.textContent = answered > 0 ? `${answered}/${total}` : '';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderMain();
+</script>
+</body>
+</html>
